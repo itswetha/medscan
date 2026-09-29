@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
+from app.models.audit_log import AuditLog  # noqa: F401 - registers model metadata
 from app.models.user import User  # noqa: F401 - registers model metadata
 from app.models.scan import Scan  # noqa: F401 - registers model metadata
 from app.models.prediction import Prediction  # noqa: F401 - registers model metadata

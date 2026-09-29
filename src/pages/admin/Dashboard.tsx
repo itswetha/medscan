@@ -15,6 +15,7 @@ export default function AdminDashboard() {
         <h2>Platform overview</h2>
         <p>Review aggregate prediction and model confidence trends.</p>
         <Link className="button button-primary inline-button" to="/admin/monitoring">Open model monitoring</Link>
+        <Link className="button button-quiet inline-button audit-link" to="/admin/audit-logs">View audit logs</Link>
       </section>
     </AppShell>
   )

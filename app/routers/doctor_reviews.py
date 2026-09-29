@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.storage import UnsafeStoragePath, resolve_upload_file
 from app.db.session import get_db
 from app.dependencies.auth import require_role
 from app.models.doctor_review import DoctorReview
@@ -20,6 +21,7 @@ from app.models.scan import Scan
 from app.models.user import User
 from app.schemas.reviews import ReviewSubmission
 from app.services.screening_history import patient_scan_history, top_prediction
+from app.services.audit import add_audit_log
 
 patient_router = APIRouter(prefix="/scans", tags=["doctor reviews"])
 doctor_router = APIRouter(prefix="/doctor/reviews", tags=["doctor reviews"])
@@ -70,6 +72,8 @@ def request_review(
     scan.doctor_review_status = "pending"
     db.add(review)
     try:
+        db.flush()
+        add_audit_log(db, patient.id, "review_requested", f"scans/{scan.id}")
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -176,6 +180,10 @@ def get_review_image(
         if prediction is None:
             raise HTTPException(status_code=404, detail="Grad-CAM image not available")
         image_path = Path(prediction.gradcam_path)
+    try:
+        image_path = resolve_upload_file(str(image_path))
+    except (UnsafeStoragePath, OSError, RuntimeError):
+        raise HTTPException(status_code=404, detail="Image file not found")
     if not image_path.is_file():
         raise HTTPException(status_code=404, detail="Image file not found")
     return FileResponse(image_path, media_type="image/png")
@@ -201,6 +209,7 @@ def submit_review(
     scan = db.get(Scan, review.scan_id)
     if scan is not None:
         scan.doctor_review_status = "completed"
+    add_audit_log(db, doctor.id, "review_submitted", f"scans/{review.scan_id}")
     db.add(Notification(
         user_id=review.requested_by,
         scan_id=review.scan_id,

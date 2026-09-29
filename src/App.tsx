@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminMonitoring from './pages/admin/Monitoring'
+import AdminAuditLogs from './pages/admin/AuditLogs'
 import DoctorDashboard from './pages/doctor/Dashboard'
 import DoctorReviewPage from './pages/doctor/Review'
 import Login from './pages/Login'
@@ -34,6 +35,7 @@ export default function App() {
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/monitoring" element={<AdminMonitoring />} />
+        <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
       </Route>
       <Route path="*" element={<HomeRedirect />} />
     </Routes>

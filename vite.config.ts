@@ -10,6 +10,11 @@ export default defineConfig({
       '/patients': 'http://localhost:8000',
       '/doctor/reviews': 'http://localhost:8000',
       '/notifications': 'http://localhost:8000',
+      '/admin/audit-logs': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        bypass: (req) => req.headers.accept?.includes('text/html') ? '/index.html' : undefined,
+      },
       '/admin/monitoring': {
         target: 'http://localhost:8000',
         changeOrigin: true,

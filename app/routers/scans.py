@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.storage import UnsafeStoragePath, resolve_upload_file
 from app.db.session import get_db
 from app.dependencies.auth import require_role
 from app.models.doctor_review import DoctorReview
@@ -21,6 +22,7 @@ from app.services.image_quality import check_image_quality
 from app.ml.inference_service import run_analysis
 from app.services.scan_report import build_scan_report
 from app.services.screening_history import patient_scan_history
+from app.services.audit import add_audit_log
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 patients_router = APIRouter(prefix="/patients", tags=["patients"])
@@ -68,6 +70,7 @@ async def upload_scan(
     try:
         image_path.write_bytes(encoded.tobytes())
         scan.storage_path = str(image_path)
+        add_audit_log(db, patient.id, "scan_upload", f"scans/{scan.id}")
         db.commit()
     except Exception:
         db.rollback()
@@ -131,6 +134,10 @@ def download_scan_report(
     if model_version is None:
         raise HTTPException(status_code=500, detail="Prediction model version is unavailable")
 
+    try:
+        resolve_upload_file(prediction.gradcam_path)
+    except (UnsafeStoragePath, OSError, RuntimeError):
+        raise HTTPException(status_code=404, detail="Report image not found")
     pdf = build_scan_report(scan, patient, prediction, model_version)
     return Response(
         content=pdf,
@@ -154,9 +161,15 @@ def analyze_scan(
     existing = db.scalar(select(Prediction).where(Prediction.scan_id == scan.id))
     if existing is not None:
         version = db.get(ModelVersion, existing.model_version_id)
+        add_audit_log(db, patient.id, "analysis_run", f"scans/{scan.id}")
+        db.commit()
         return {"scan_id": scan.id, **_prediction_response(existing, version)}
 
-    result = run_analysis(scan.id, scan.storage_path)
+    try:
+        original_path = resolve_upload_file(scan.storage_path)
+    except (UnsafeStoragePath, OSError, RuntimeError):
+        raise HTTPException(status_code=404, detail="Scan image not found")
+    result = run_analysis(scan.id, str(original_path))
 
     expected = ("normal_probability", "pneumonia_probability", "tuberculosis_probability", "other_probability", "ai_confidence", "gradcam_path", "model_version")
     missing = [key for key in expected if key not in result]
@@ -190,6 +203,7 @@ def analyze_scan(
         gradcam_path=str(gradcam_destination),
     )
     db.add(prediction)
+    add_audit_log(db, patient.id, "analysis_run", f"scans/{scan.id}")
     db.commit()
     db.refresh(prediction)
     return {"scan_id": scan.id, **_prediction_response(prediction, model_version)}
@@ -258,6 +272,10 @@ def get_scan_image(
         image_path = Path(prediction.gradcam_path)
     else:
         raise HTTPException(status_code=404, detail="Image not found")
+    try:
+        image_path = resolve_upload_file(str(image_path))
+    except (UnsafeStoragePath, OSError, RuntimeError):
+        raise HTTPException(status_code=404, detail="Image file not found")
     if not image_path.is_file():
         raise HTTPException(status_code=404, detail="Image file not found")
     return FileResponse(image_path, media_type="image/png")

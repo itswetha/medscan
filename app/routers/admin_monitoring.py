@@ -7,6 +7,7 @@ from app.dependencies.auth import require_role
 from app.models.model_version import ModelVersion
 from app.models.prediction import Prediction
 from app.models.user import User
+from app.services.audit import add_audit_log
 
 router = APIRouter(prefix="/admin/monitoring", tags=["admin monitoring"])
 
@@ -51,12 +52,15 @@ def get_monitoring_summary(
         .group_by(ModelVersion.version)
         .order_by(ModelVersion.version)
     ).all()
-    return {
+    response = {
         "total_predictions": total,
         "average_confidence": float(average) if average is not None else None,
         "class_distribution": distribution,
         "model_version_counts": {version: int(count) for version, count in version_rows},
     }
+    add_audit_log(db, admin.id, "admin_monitoring_access", "admin/monitoring")
+    db.commit()
+    return response
 
 
 @router.get("/trend")
@@ -70,7 +74,10 @@ def get_confidence_trend(
         .group_by(week_start)
         .order_by(week_start.asc())
     ).all()
-    return [
+    response = [
         {"week_start": start, "average_confidence": float(average)}
         for start, average in rows
     ]
+    add_audit_log(db, admin.id, "admin_monitoring_access", "admin/monitoring/trend")
+    db.commit()
+    return response
