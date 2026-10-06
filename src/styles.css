@@ -293,6 +293,9 @@ h2 { margin-bottom: 8px; font-size: 18px; font-weight: 700; }
 .probability-explanation { margin-top: 8px; color: var(--muted); font-size: 11px; }
 .probability-explanation summary { width: fit-content; color: var(--primary-blue); cursor: pointer; font-weight: 600; }
 .probability-explanation p { margin: 7px 0 0; line-height: 1.5; }
+.plain-language-explanation { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--text); font-size: 13px; }
+.plain-language-explanation summary { width: fit-content; color: var(--primary-blue); cursor: pointer; font-weight: 600; }
+.plain-language-explanation p { max-width: 720px; margin: 10px 0 0; color: var(--muted); line-height: 1.6; }
 .xray-viewer { display: grid; max-width: 760px; gap: 12px; margin-top: 18px; }
 .xray-view-tabs { display: inline-flex; width: fit-content; gap: 3px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--neutral-soft); }
 .xray-view-tab { min-height: 34px; padding: 0 13px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 600; }

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { downloadScanReport, getScanImage, getScanResult, type ScanResult as ScanResultData } from '../../api/scans'
 import { AppShell } from '../../components/layout/AppShell'
 import { XrayViewer } from '../../components/XrayViewer'
+import { buildPlainLanguageExplanation } from './plainLanguageExplanation'
 import { requestScanReview } from '../../api/reviews'
 
 const classLabels = {
@@ -167,6 +168,10 @@ export default function ScanResult() {
                 )
               })}
             </div>
+            <details className="plain-language-explanation">
+              <summary>Explain this in plain language</summary>
+              <p>{buildPlainLanguageExplanation(result)}</p>
+            </details>
           </section>
 
           <section className="metrics-grid" aria-label="Screening reliability metrics">
