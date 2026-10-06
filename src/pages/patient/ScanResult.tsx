@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios'
 import { Link, useParams } from 'react-router-dom'
 import { downloadScanReport, getScanImage, getScanResult, type ScanResult as ScanResultData } from '../../api/scans'
 import { AppShell } from '../../components/layout/AppShell'
+import { XrayViewer } from '../../components/XrayViewer'
 import { requestScanReview } from '../../api/reviews'
 
 const classLabels = {
@@ -158,6 +159,10 @@ export default function ScanResult() {
                     <div className="progress-track" role="progressbar" aria-label={`${label} probability`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
                       <div className="progress-fill" style={{ width: `${percent}%` }} />
                     </div>
+                    <details className="probability-explanation">
+                      <summary>Why this result?</summary>
+                      <p>This prediction is based on patterns the model identified in the highlighted regions of the AI explanation above.</p>
+                    </details>
                   </div>
                 )
               })}
@@ -179,10 +184,7 @@ export default function ScanResult() {
 
           <section className="result-card explainability-card">
             <h2>Explainability</h2>
-            <div className="image-comparison">
-              <figure><img src={originalUrl} alt="Uploaded chest X-ray" /><figcaption>Original X-ray</figcaption></figure>
-              <figure><img src={gradcamUrl} alt="Grad-CAM heatmap highlighting image regions" /><figcaption>Grad-CAM heatmap</figcaption></figure>
-            </div>
+            <XrayViewer originalUrl={originalUrl} heatmapUrl={gradcamUrl} />
             <p className="explainability-caption">Highlighted regions represent areas that most influenced the model's prediction. This is an interpretability aid, not medical confirmation.</p>
           </section>
         </>

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { isAxiosError } from 'axios'
 import { Link, useParams } from 'react-router-dom'
 import { AppShell } from '../../components/layout/AppShell'
+import { XrayViewer } from '../../components/XrayViewer'
 import { getDoctorReview, getDoctorReviewImage, submitDoctorReview, type DoctorReviewDetail, type ReviewDecision } from '../../api/reviews'
 
 const probabilityLabels = [
@@ -98,10 +99,7 @@ export default function DoctorReviewPage() {
 
       <section className="result-card">
         <div className="result-section-heading"><div><h2>Scan images</h2><p>Original X-ray and model explainability overlay.</p></div><span className={`review-status ${review.status === 'COMPLETED' ? 'completed' : ''}`}>{review.status}</span></div>
-        <div className="image-comparison">
-          <figure><img src={originalUrl} alt="Patient chest X-ray" /><figcaption>Original X-ray</figcaption></figure>
-          {gradcamUrl ? <figure><img src={gradcamUrl} alt="Grad-CAM heatmap" /><figcaption>Grad-CAM heatmap</figcaption></figure> : null}
-        </div>
+        <XrayViewer originalUrl={originalUrl} heatmapUrl={gradcamUrl} originalAlt="Patient chest X-ray" />
       </section>
 
       <section className="metrics-grid">

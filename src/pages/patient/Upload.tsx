@@ -11,6 +11,8 @@ export default function Upload() {
   const [uploading, setUploading] = useState(false)
   const [continuing, setContinuing] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [analysisProgress, setAnalysisProgress] = useState(0)
+  const [analysisStep, setAnalysisStep] = useState(2)
   const navigate = useNavigate()
   const [error, setError] = useState('')
 
@@ -46,17 +48,72 @@ export default function Upload() {
     if (!result) return
     setContinuing(true)
     setAnalyzing(true)
+    setAnalysisProgress(0)
+    setAnalysisStep(2)
     setError('')
+    let progressTimer: number | undefined
+    // Illustrative client-side progress only; these stages are not literal backend events.
+    const progressAnimation = new Promise<void>((resolve) => {
+      const startedAt = Date.now()
+      const duration = 2400
+      progressTimer = window.setInterval(() => {
+        const elapsed = Date.now() - startedAt
+        setAnalysisProgress(Math.min(100, Math.floor((elapsed / duration) * 100)))
+        setAnalysisStep(Math.min(5, 2 + Math.floor(elapsed / (duration / 3))))
+        if (elapsed >= duration) {
+          if (progressTimer !== undefined) window.clearInterval(progressTimer)
+          setAnalysisProgress(100)
+          setAnalysisStep(5)
+          resolve()
+        }
+      }, 50)
+    })
     try {
       if (result.quality_status === 'poor') await continueWithPoorQuality(result.scan_id)
       await analyzeScan(result.scan_id)
+      await progressAnimation
       navigate(`/patient/scans/${result.scan_id}/result`)
     } catch (cause) {
+      if (progressTimer !== undefined) window.clearInterval(progressTimer)
       setError(isAxiosError(cause) ? (cause.response?.data?.detail ?? 'Could not continue with this scan.') : 'Could not continue with this scan.')
     } finally {
       setContinuing(false)
       setAnalyzing(false)
     }
+  }
+
+  if (analyzing) {
+    const stages = ['Image uploaded', 'Checking image quality', 'Running AI model', 'Generating AI explanation', 'Preparing report']
+    return (
+      <AppShell>
+        <section className="analysis-progress-card" aria-labelledby="analysis-progress-title">
+          <div className="analysis-progress-heading">
+            <span className="eyebrow">PATIENT WORKSPACE</span>
+            <h1 id="analysis-progress-title">Preparing your analysis</h1>
+          </div>
+          <ol className="analysis-checklist" aria-label="Analysis progress">
+            {stages.map((stage, index) => {
+              const complete = index < 2 || analysisStep > index
+              const active = analysisStep === index
+              return (
+                <li className={complete ? 'complete' : active ? 'active' : ''} key={stage}>
+                  <span className="analysis-stage-icon" aria-hidden="true">
+                    {complete ? '✓' : active ? <span className="analysis-spinner" /> : ''}
+                  </span>
+                  <span>{stage}</span>
+                </li>
+              )
+            })}
+          </ol>
+          <div className="analysis-progress-meter">
+            <div className="progress-track" role="progressbar" aria-label="Analysis progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={analysisProgress}>
+              <div className="progress-fill" style={{ width: `${analysisProgress}%` }} />
+            </div>
+            <strong>{analysisProgress}%</strong>
+          </div>
+        </section>
+      </AppShell>
+    )
   }
 
   return (
