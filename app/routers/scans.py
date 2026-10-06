@@ -21,7 +21,7 @@ from app.models.user import User
 from app.services.image_quality import check_image_quality
 from app.ml.inference_service import run_analysis
 from app.services.scan_report import build_scan_report
-from app.services.screening_history import patient_scan_history
+from app.services.screening_history import patient_probability_trend, patient_scan_history
 from app.services.audit import add_audit_log
 
 router = APIRouter(prefix="/scans", tags=["scans"])
@@ -116,6 +116,19 @@ def list_patient_scans(
         raise HTTPException(status_code=404, detail="Patient not found")
 
     return patient_scan_history(db, patient_id)
+
+
+@patients_router.get("/{patient_id}/trend")
+def get_patient_trend(
+    patient_id: UUID,
+    db: Session = Depends(get_db),
+    patient: User = Depends(require_role("patient")),
+):
+    # Patients can access only their own longitudinal screening history.
+    if patient.id != patient_id:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    return patient_probability_trend(db, patient_id)
 
 
 @router.get("/{scan_id}/report.pdf")

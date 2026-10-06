@@ -132,6 +132,17 @@ export async function getPatientScans(patientId: string): Promise<PatientScanHis
   return parsePatientScanHistory(data)
 }
 
+export interface PatientTrendPoint {
+  date: string
+  pneumonia_probability: number
+  tuberculosis_probability: number
+}
+
+export async function getPatientTrend(patientId: string): Promise<PatientTrendPoint[]> {
+  const { data } = await apiClient.get<PatientTrendPoint[]>(`/patients/${patientId}/trend`)
+  return data
+}
+
 export async function downloadScanReport(scanId: string) {
   const { data } = await apiClient.get<Blob>(`/scans/${scanId}/report.pdf`, { responseType: 'blob' })
   return URL.createObjectURL(data)

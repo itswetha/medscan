@@ -6,6 +6,9 @@ import DoctorDashboard from './pages/doctor/Dashboard'
 import DoctorReviewPage from './pages/doctor/Review'
 import Login from './pages/Login'
 import PatientDashboard from './pages/patient/Dashboard'
+import PatientHealth from './pages/patient/Health'
+import PatientGallery from './pages/patient/Gallery'
+import PatientCompare from './pages/patient/Compare'
 import PatientUpload from './pages/patient/Upload'
 import PatientScanResult from './pages/patient/ScanResult'
 import Register from './pages/Register'
@@ -25,6 +28,9 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
         <Route path="/patient" element={<PatientDashboard />} />
+        <Route path="/patient/health" element={<PatientHealth />} />
+        <Route path="/patient/gallery" element={<PatientGallery />} />
+        <Route path="/patient/compare" element={<PatientCompare />} />
         <Route path="/patient/upload" element={<PatientUpload />} />
         <Route path="/patient/scans/:scanId/result" element={<PatientScanResult />} />
       </Route>

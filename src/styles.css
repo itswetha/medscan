@@ -158,6 +158,8 @@ h2 { margin-bottom: 8px; font-size: 18px; font-weight: 700; }
 .history-date, .history-prediction { font-weight: 600; }
 .history-score { color: var(--muted); font-size: 12px; }
 .history-score strong { color: var(--navy); }
+.patient-page-links { display: flex; flex-wrap: wrap; gap: 9px; margin: -10px 0 20px; }
+.patient-page-links .button { display: inline-flex; align-items: center; justify-content: center; }
 .review-status { justify-self: end; padding: 5px 8px; border-radius: 999px; background: var(--warning-light); color: var(--warning-text); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 .review-status.completed { background: var(--light-blue); color: var(--navy); }
 @media (max-width: 760px) {
@@ -166,6 +168,7 @@ h2 { margin-bottom: 8px; font-size: 18px; font-weight: 700; }
   .history-prediction, .review-status { grid-column: 2; grid-row: 1; justify-self: end; text-align: right; }
   .history-score { grid-row: 2; }
   .review-status { grid-row: 2; }
+  .compare-selectors { grid-template-columns: 1fr; gap: 8px; }
 }
 
 .review-queue { padding: 24px; }
@@ -232,6 +235,47 @@ h2 { margin-bottom: 8px; font-size: 18px; font-weight: 700; }
 .trend-bar-area { display: flex; width: 30px; height: 145px; align-items: flex-end; border-radius: 6px 6px 0 0; background: var(--neutral-soft); }
 .trend-bar { width: 100%; min-height: 3px; border-radius: 6px 6px 0 0; background: var(--primary-gradient); }
 .trend-column time { max-width: 82px; min-height: 28px; text-align: center; line-height: 1.35; }
+.latest-scan-card { max-width: 760px; }
+.latest-scan-prediction { display: block; margin-bottom: 7px; color: var(--navy); font-size: 20px; }
+.latest-scan-card > p { margin: 0; color: var(--muted); font-size: 13px; }
+.patient-trend-chart { display: flex; min-height: 220px; gap: 12px; overflow-x: auto; align-items: stretch; padding: 12px 4px 0; border-bottom: 1px solid var(--line); }
+.patient-trend-column { display: flex; min-width: 108px; flex: 1 0 108px; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; color: var(--muted); font-size: 10px; }
+.patient-trend-values { display: flex; justify-content: center; gap: 5px; color: var(--text); font-size: 10px; font-variant-numeric: tabular-nums; }
+.patient-trend-bars { display: flex; width: 48px; height: 145px; align-items: flex-end; justify-content: center; gap: 4px; border-radius: 6px 6px 0 0; background: var(--neutral-soft); }
+.patient-trend-bar { width: 18px; min-height: 2px; border-radius: 4px 4px 0 0; }
+.patient-trend-bar.pneumonia, .patient-trend-legend i.pneumonia { background: var(--primary-gradient); }
+.patient-trend-bar.tuberculosis, .patient-trend-legend i.tuberculosis { background: var(--warning-border); }
+.patient-trend-column time { min-height: 28px; max-width: 108px; text-align: center; line-height: 1.35; }
+.patient-trend-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; color: var(--muted); font-size: 11px; }
+.patient-trend-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.patient-trend-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.gallery-card { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.gallery-card:hover { border-color: var(--primary-blue-light); box-shadow: var(--shadow-hover); text-decoration: none; transform: translateY(-2px); }
+.gallery-thumbnail { display: grid; aspect-ratio: 4 / 3; place-items: center; overflow: hidden; background: var(--neutral-soft); color: var(--muted); font-size: 12px; }
+.gallery-thumbnail img { width: 100%; height: 100%; object-fit: contain; }
+.gallery-card-details { display: grid; gap: 7px; padding: 13px 14px; }
+.gallery-card-details time { color: var(--muted); font-size: 11px; }
+.gallery-card-details strong { color: var(--navy); font-size: 13px; }
+.compare-selectors { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 12px; }
+.compare-selectors label { color: var(--text); font-size: 12px; font-weight: 600; }
+.compare-selectors select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--input-border); border-radius: 7px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; }
+.compare-scan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.compare-scan-card { min-width: 0; }
+.compare-scan-card h2 { margin-bottom: 5px; }
+.compare-scan-card > time { display: block; margin-bottom: 12px; color: var(--muted); font-size: 11px; }
+.compare-scan-card > img { display: block; width: 100%; aspect-ratio: 4 / 3; margin-bottom: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--neutral-soft); object-fit: contain; }
+.compare-scan-card > p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.compare-scan-card > p strong { color: var(--navy); }
+.comparison-table-wrap { overflow-x: auto; }
+.comparison-table { width: 100%; border-collapse: collapse; color: var(--text); font-size: 12px; text-align: left; }
+.comparison-table th, .comparison-table td { padding: 12px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.comparison-table thead th { color: var(--muted); font-size: 11px; }
+.comparison-table tbody th { color: var(--navy); font-weight: 600; }
+.comparison-change { white-space: nowrap; font-weight: 700; }
+.comparison-change.increased { color: var(--warning-text); }
+.comparison-change.decreased { color: var(--primary-blue); }
+.comparison-change.unchanged, .comparison-change.unavailable { color: var(--muted); }
 .model-count-list { display: grid; }
 .model-count-row { display: flex; min-height: 44px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); color: var(--text); font-size: 13px; }
 .model-count-row strong { color: var(--navy); font-variant-numeric: tabular-nums; }
@@ -243,6 +287,8 @@ h2 { margin-bottom: 8px; font-size: 18px; font-weight: 700; }
 .audit-table th, .audit-table td { padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .audit-table th { background: var(--soft-blue); color: var(--navy); font-size: 11px; font-weight: 700; }
 .audit-table td { overflow-wrap: anywhere; }
+
+@media (max-width: 560px) { .compare-scan-grid { grid-template-columns: 1fr; } }
 
 .probability-explanation { margin-top: 8px; color: var(--muted); font-size: 11px; }
 .probability-explanation summary { width: fit-content; color: var(--primary-blue); cursor: pointer; font-weight: 600; }

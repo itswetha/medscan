@@ -41,6 +41,11 @@ export default function PatientDashboard() {
         <h1>Welcome, {user ? displayName(user.full_name) : 'there'}</h1>
         <p>Your respiratory screening activity and past results.</p>
       </section>
+      <nav className="patient-page-links" aria-label="Patient scan tools">
+        <Link className="button button-quiet" to="/patient/health">Health trends</Link>
+        <Link className="button button-quiet" to="/patient/gallery">X-ray gallery</Link>
+        <Link className="button button-quiet" to="/patient/compare">Compare scans</Link>
+      </nav>
       <section className="placeholder-card history-section">
         <div className="history-heading">
           <div><h2>Screening history</h2><p>Review past scans and their AI-assisted screening results.</p></div>

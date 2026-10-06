@@ -49,3 +49,24 @@ def patient_scan_history(db: Session, patient_id: UUID, exclude_scan_id: UUID | 
         }
         for scan in scans
     ]
+
+
+def patient_probability_trend(db: Session, patient_id: UUID) -> list[dict]:
+    rows = db.execute(
+        select(
+            Scan.created_at,
+            Prediction.pneumonia_probability,
+            Prediction.tuberculosis_probability,
+        )
+        .join(Prediction, Prediction.scan_id == Scan.id)
+        .where(Scan.patient_id == patient_id)
+        .order_by(Scan.created_at.asc(), Scan.id.asc())
+    ).all()
+    return [
+        {
+            "date": scan_date,
+            "pneumonia_probability": float(pneumonia_probability),
+            "tuberculosis_probability": float(tuberculosis_probability),
+        }
+        for scan_date, pneumonia_probability, tuberculosis_probability in rows
+    ]
