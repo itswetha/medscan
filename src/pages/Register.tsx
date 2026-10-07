@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
 import type { UserRole } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
+import { AuthLayout } from '../components/AuthLayout'
 
 export default function Register() {
   const { isAuthenticated, user } = useAuth()
@@ -32,10 +33,10 @@ export default function Register() {
   }
 
   return (
-    <main className="auth-page">
+    <AuthLayout>
       <section className="auth-card" aria-labelledby="register-title">
         <div className="auth-heading">
-          <span className="eyebrow">RESPIRATORY SCREENING PLATFORM</span>
+          <span className="eyebrow">VITAL SCAN AI PLATFORM</span>
           <h1 id="register-title">Create an account</h1>
           <p>Register as a patient or licensed doctor.</p>
         </div>
@@ -58,6 +59,6 @@ export default function Register() {
         </form>
         <p className="auth-footer">Already registered? <Link to="/login">Sign in</Link></p>
       </section>
-    </main>
+    </AuthLayout>
   )
 }

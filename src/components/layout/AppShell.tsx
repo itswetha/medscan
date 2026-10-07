@@ -82,9 +82,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Respiratory Screening home">
-          <span className="brand-mark" aria-hidden="true">RS</span>
-          <span>Respiratory Screening</span>
+        <a className="brand" href="/" aria-label="Vital Scan AI home">
+          <span className="brand-mark" aria-hidden="true">VS</span>
+          <span>Vital Scan AI</span>
         </a>
         <div className="account-area">
           <div className="notification-control">
