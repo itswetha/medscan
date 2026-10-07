@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { useAuth } from '../context/AuthContext'
+import { AuthLayout } from '../components/AuthLayout'
 import { dashboardForRole } from '../routes/ProtectedRoute'
 
 export default function Login() {
@@ -29,10 +30,10 @@ export default function Login() {
   }
 
   return (
-    <main className="auth-page">
+    <AuthLayout>
       <section className="auth-card" aria-labelledby="login-title">
         <div className="auth-heading">
-          <span className="eyebrow">RESPIRATORY SCREENING PLATFORM</span>
+          <span className="eyebrow">VITAL SCAN AI PLATFORM</span>
           <h1 id="login-title">Welcome back</h1>
           <p>Sign in to continue to your screening workspace.</p>
         </div>
@@ -48,6 +49,6 @@ export default function Login() {
         </form>
         <p className="auth-footer">New to the platform? <Link to="/register">Create an account</Link></p>
       </section>
-    </main>
+    </AuthLayout>
   )
 }
