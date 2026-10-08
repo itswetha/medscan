@@ -1,12 +1,12 @@
 """create predictions and model_versions tables
 
-Revision ID: 0003_create_predictions_and_model_versions
+Revision ID: 0003_predictions
 Revises: 0002
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0003_create_predictions_and_model_versions"
+revision = "0003_predictions"
 down_revision = "0002"
 branch_labels = None
 depends_on = None
