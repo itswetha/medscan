@@ -4,6 +4,7 @@ import AdminMonitoring from './pages/admin/Monitoring'
 import AdminAuditLogs from './pages/admin/AuditLogs'
 import DoctorDashboard from './pages/doctor/Dashboard'
 import DoctorReviewPage from './pages/doctor/Review'
+import DoctorProfilePage from './pages/doctor/Profile'
 import Login from './pages/Login'
 import PatientDashboard from './pages/patient/Dashboard'
 import PatientHealth from './pages/patient/Health'
@@ -11,6 +12,7 @@ import PatientGallery from './pages/patient/Gallery'
 import PatientCompare from './pages/patient/Compare'
 import PatientUpload from './pages/patient/Upload'
 import PatientScanResult from './pages/patient/ScanResult'
+import ChooseDoctor from './pages/patient/ChooseDoctor'
 import Register from './pages/Register'
 import ProtectedRoute from './routes/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
@@ -33,9 +35,11 @@ export default function App() {
         <Route path="/patient/compare" element={<PatientCompare />} />
         <Route path="/patient/upload" element={<PatientUpload />} />
         <Route path="/patient/scans/:scanId/result" element={<PatientScanResult />} />
+        <Route path="/patient/scans/:scanId/choose-doctor" element={<ChooseDoctor />} />
       </Route>
       <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
         <Route path="/doctor" element={<DoctorDashboard />} />
+        <Route path="/doctor/profile" element={<DoctorProfilePage />} />
         <Route path="/doctor/review/:reviewId" element={<DoctorReviewPage />} />
       </Route>
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

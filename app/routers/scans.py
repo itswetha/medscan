@@ -240,6 +240,7 @@ def get_scan_result(
     review_data = None
     if review is not None:
         reviewed_by = db.get(User, review.reviewed_by) if review.reviewed_by else None
+        assigned_doctor = db.get(User, review.assigned_doctor_id) if review.assigned_doctor_id else None
         review_data = {
             "id": review.id,
             "status": review.status.upper(),
@@ -248,6 +249,8 @@ def get_scan_result(
             "requested_at": review.requested_at,
             "reviewed_at": review.reviewed_at,
             "doctor_name": reviewed_by.full_name if reviewed_by else None,
+            "assigned_doctor_name": assigned_doctor.full_name if assigned_doctor else None,
+            "assigned_doctor_specialization": assigned_doctor.specialization if assigned_doctor else None,
         }
     return {
         "scan_id": scan.id,

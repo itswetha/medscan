@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { AppShell, displayName } from '../../components/layout/AppShell'
 import { useAuth } from '../../context/AuthContext'
 import { getDoctorReviews, type ReviewFilter, type ReviewQueueItem } from '../../api/reviews'
+import { getMyDoctorProfile } from '../../api/doctors'
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -15,6 +16,18 @@ export default function DoctorDashboard() {
   const [reviews, setReviews] = useState<ReviewQueueItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [profileIncomplete, setProfileIncomplete] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getMyDoctorProfile()
+      .then((profile) => {
+        if (!active) return
+        setProfileIncomplete(!profile.specialization?.trim())
+      })
+      .catch(() => { if (active) setProfileIncomplete(true) })
+    return () => { active = false }
+  }, [user?.id])
 
   useEffect(() => {
     let active = true
@@ -38,9 +51,13 @@ export default function DoctorDashboard() {
         <h1>Welcome, {user ? displayName(user.full_name) : 'there'}</h1>
         <p>Review AI-assisted screening results submitted by patients.</p>
       </section>
+      {profileIncomplete ? <aside className="doctor-profile-banner" role="status">
+        <span>Complete your profile so patients can find and select you.</span>
+        <Link to="/doctor/profile">Complete profile</Link>
+      </aside> : null}
       <section className="placeholder-card review-queue">
         <div className="review-queue-heading">
-          <div><h2>Doctor review requests</h2><p>Requests are visible to all doctors.</p></div>
+          <div><h2>Doctor review requests</h2><p>Requests sent to you by patients.</p></div>
           <div className="review-filter" role="group" aria-label="Filter reviews">
             <button type="button" className={filter === 'pending' ? 'selected' : ''} aria-pressed={filter === 'pending'} onClick={() => setFilter('pending')}>Pending</button>
             <button type="button" className={filter === 'completed' ? 'selected' : ''} aria-pressed={filter === 'completed'} onClick={() => setFilter('completed')}>Completed</button>

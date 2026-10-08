@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.doctor_review import DoctorReview
 from app.models.prediction import Prediction
 from app.models.scan import Scan
+from app.models.user import User
 
 
 def top_prediction(prediction: Prediction | None) -> dict | None:
@@ -38,17 +39,26 @@ def patient_scan_history(db: Session, patient_id: UUID, exclude_scan_id: UUID | 
         item.scan_id: item
         for item in db.scalars(select(DoctorReview).where(DoctorReview.scan_id.in_(scan_ids))).all()
     }
-    return [
-        {
+    assigned_doctor_ids = {review.assigned_doctor_id for review in reviews.values() if review.assigned_doctor_id}
+    assigned_doctors = {
+        doctor.id: doctor
+        for doctor in db.scalars(select(User).where(User.id.in_(assigned_doctor_ids))).all()
+    } if assigned_doctor_ids else {}
+    history = []
+    for scan in scans:
+        review = reviews.get(scan.id)
+        assigned_doctor = assigned_doctors.get(review.assigned_doctor_id) if review and review.assigned_doctor_id else None
+        history.append({
             "scan_id": scan.id,
             "created_at": scan.created_at,
             "quality_score": scan.quality_score,
             "quality_status": scan.quality_status.value,
             "top_prediction": top_prediction(predictions.get(scan.id)),
-            "doctor_review_status": reviews[scan.id].status.upper() if scan.id in reviews else "NOT_REQUESTED",
-        }
-        for scan in scans
-    ]
+            "doctor_review_status": review.status.upper() if review else "NOT_REQUESTED",
+            "assigned_doctor_name": assigned_doctor.full_name if assigned_doctor else None,
+            "assigned_doctor_specialization": assigned_doctor.specialization if assigned_doctor else None,
+        })
+    return history
 
 
 def patient_probability_trend(db: Session, patient_id: UUID) -> list[dict]:

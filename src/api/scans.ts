@@ -52,6 +52,8 @@ export interface ScanResult {
     requested_at: string
     reviewed_at: string | null
     doctor_name: string | null
+    assigned_doctor_name: string | null
+    assigned_doctor_specialization: string | null
   } | null
   images: { original: string; gradcam: string | null }
 }
@@ -90,6 +92,8 @@ export interface PatientScanHistoryItem {
   quality_status: 'good' | 'poor'
   top_prediction: { class: 'Normal' | 'Pneumonia' | 'Tuberculosis' | 'Other'; probability: number } | null
   doctor_review_status: 'NOT_REQUESTED' | 'PENDING' | 'COMPLETED'
+  assigned_doctor_name: string | null
+  assigned_doctor_specialization: string | null
 }
 
 export class PatientScanResponseError extends Error {
@@ -106,6 +110,8 @@ function isPatientScanHistoryItem(value: unknown): value is PatientScanHistoryIt
     typeof item.scan_id !== 'string' ||
     typeof item.created_at !== 'string' || Number.isNaN(Date.parse(item.created_at)) ||
     typeof item.quality_score !== 'number' ||
+    (item.assigned_doctor_name !== null && typeof item.assigned_doctor_name !== 'string') ||
+    (item.assigned_doctor_specialization !== null && typeof item.assigned_doctor_specialization !== 'string') ||
     (item.quality_status !== 'good' && item.quality_status !== 'poor') ||
     (item.doctor_review_status !== 'NOT_REQUESTED' && item.doctor_review_status !== 'PENDING' && item.doctor_review_status !== 'COMPLETED')
   ) return false

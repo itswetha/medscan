@@ -19,7 +19,7 @@ from app.models.notification import Notification
 from app.models.prediction import Prediction
 from app.models.scan import Scan
 from app.models.user import User
-from app.schemas.reviews import ReviewSubmission
+from app.schemas.reviews import ReviewRequest, ReviewSubmission
 from app.services.screening_history import patient_scan_history, top_prediction
 from app.services.audit import add_audit_log
 
@@ -27,8 +27,13 @@ patient_router = APIRouter(prefix="/scans", tags=["doctor reviews"])
 doctor_router = APIRouter(prefix="/doctor/reviews", tags=["doctor reviews"])
 
 
-def _review_or_404(db: Session, review_id: UUID) -> DoctorReview:
-    review = db.get(DoctorReview, review_id)
+def _assigned_review_or_404(db: Session, review_id: UUID, doctor_id: UUID) -> DoctorReview:
+    review = db.scalar(
+        select(DoctorReview).where(
+            DoctorReview.id == review_id,
+            DoctorReview.assigned_doctor_id == doctor_id,
+        )
+    )
     if review is None:
         raise HTTPException(status_code=404, detail="Review request not found")
     return review
@@ -57,6 +62,7 @@ def _prediction_payload(prediction: Prediction | None, version: ModelVersion | N
 @patient_router.post("/{scan_id}/request-review", status_code=201)
 def request_review(
     scan_id: UUID,
+    payload: ReviewRequest,
     db: Session = Depends(get_db),
     patient: User = Depends(require_role("patient")),
 ):
@@ -65,12 +71,34 @@ def request_review(
         raise HTTPException(status_code=404, detail="Scan not found")
     if db.scalar(select(Prediction.id).where(Prediction.scan_id == scan.id)) is None:
         raise HTTPException(status_code=409, detail="AI analysis must be completed before requesting doctor verification")
-    if db.scalar(select(DoctorReview.id).where(DoctorReview.scan_id == scan.id)) is not None:
-        raise HTTPException(status_code=409, detail="Doctor verification has already been requested for this scan")
+    assigned_doctor = db.scalar(
+        select(User).where(
+            User.id == payload.doctor_id,
+            User.role == "doctor",
+            User.specialization.is_not(None),
+        )
+    )
+    if assigned_doctor is None:
+        raise HTTPException(status_code=400, detail="Selected doctor is not available for review")
 
-    review = DoctorReview(scan_id=scan.id, requested_by=patient.id)
+    review = db.scalar(select(DoctorReview).where(DoctorReview.scan_id == scan.id).with_for_update())
+    if review is not None:
+        if review.status != "pending" or review.assigned_doctor_id is not None:
+            raise HTTPException(status_code=409, detail="Doctor verification has already been requested for this scan")
+        review.assigned_doctor_id = assigned_doctor.id
+    else:
+        review = DoctorReview(
+            scan_id=scan.id,
+            requested_by=patient.id,
+            assigned_doctor_id=assigned_doctor.id,
+        )
     scan.doctor_review_status = "pending"
     db.add(review)
+    db.add(Notification(
+        user_id=assigned_doctor.id,
+        scan_id=scan.id,
+        message="New review request from a patient",
+    ))
     try:
         db.flush()
         add_audit_log(db, patient.id, "review_requested", f"scans/{scan.id}")
@@ -99,7 +127,10 @@ def list_reviews(
     doctor: User = Depends(require_role("doctor")),
 ):
     reviews = db.scalars(
-        select(DoctorReview).where(DoctorReview.status == status).order_by(DoctorReview.requested_at.desc())
+        select(DoctorReview).where(
+            DoctorReview.status == status,
+            DoctorReview.assigned_doctor_id == doctor.id,
+        ).order_by(DoctorReview.requested_at.desc())
     ).all()
     result = []
     for review in reviews:
@@ -129,7 +160,7 @@ def get_review_detail(
     db: Session = Depends(get_db),
     doctor: User = Depends(require_role("doctor")),
 ):
-    review = _review_or_404(db, review_id)
+    review = _assigned_review_or_404(db, review_id, doctor.id)
     scan = db.get(Scan, review.scan_id)
     patient = db.get(User, review.requested_by)
     if scan is None or patient is None:
@@ -169,7 +200,7 @@ def get_review_image(
     db: Session = Depends(get_db),
     doctor: User = Depends(require_role("doctor")),
 ):
-    review = _review_or_404(db, review_id)
+    review = _assigned_review_or_404(db, review_id, doctor.id)
     scan = db.get(Scan, review.scan_id)
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
@@ -196,7 +227,12 @@ def submit_review(
     db: Session = Depends(get_db),
     doctor: User = Depends(require_role("doctor")),
 ):
-    review = db.scalar(select(DoctorReview).where(DoctorReview.id == review_id).with_for_update())
+    review = db.scalar(
+        select(DoctorReview).where(
+            DoctorReview.id == review_id,
+            DoctorReview.assigned_doctor_id == doctor.id,
+        ).with_for_update()
+    )
     if review is None:
         raise HTTPException(status_code=404, detail="Review request not found")
     if review.status == "completed":

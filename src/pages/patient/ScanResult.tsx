@@ -5,7 +5,6 @@ import { downloadScanReport, getScanImage, getScanResult, type ScanResult as Sca
 import { AppShell } from '../../components/layout/AppShell'
 import { XrayViewer } from '../../components/XrayViewer'
 import { buildPlainLanguageExplanation } from './plainLanguageExplanation'
-import { requestScanReview } from '../../api/reviews'
 
 const classLabels = {
   normal_probability: 'Normal',
@@ -23,8 +22,6 @@ export default function ScanResult() {
   const [error, setError] = useState('')
   const [downloadingReport, setDownloadingReport] = useState(false)
   const [reportError, setReportError] = useState('')
-  const [requestingReview, setRequestingReview] = useState(false)
-  const [reviewError, setReviewError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -64,31 +61,6 @@ export default function ScanResult() {
       objectUrls.forEach(URL.revokeObjectURL)
     }
   }, [scanId])
-
-  async function handleRequestDoctorReview() {
-    if (!scanId) return
-    setRequestingReview(true)
-    setReviewError('')
-    try {
-      const created = await requestScanReview(scanId)
-      setResult((current) => current ? {
-        ...current,
-        doctor_review: {
-          id: created.id,
-          status: created.status,
-          decision: null,
-          notes: null,
-          requested_at: created.requested_at,
-          reviewed_at: null,
-          doctor_name: null,
-        },
-      } : current)
-    } catch (cause) {
-      setReviewError(isAxiosError(cause) && typeof cause.response?.data?.detail === 'string' ? cause.response.data.detail : 'Could not request doctor verification.')
-    } finally {
-      setRequestingReview(false)
-    }
-  }
 
   function reviewDecisionLabel(value: NonNullable<ScanResultData['doctor_review']>['decision']) {
     if (value === 'agree') return 'Agrees with AI result'
@@ -200,9 +172,12 @@ export default function ScanResult() {
       <p className="diagnosis-notice">This AI-generated result is not a final medical diagnosis. A licensed doctor must review and verify the result.</p>
       {result.prediction ? <button className="button button-primary inline-button" type="button" disabled={downloadingReport} onClick={() => void handleDownloadReport()}>{downloadingReport ? 'Preparing report…' : 'Download Report (PDF)'}</button> : null}
       {reportError ? <p className="form-error" role="alert">{reportError}</p> : null}
-      {result.prediction && !result.doctor_review ? <button className="button button-quiet inline-button" type="button" disabled={requestingReview} onClick={() => void handleRequestDoctorReview()}>{requestingReview ? 'Requesting…' : 'Verify with Doctor'}</button> : null}
-      {result.doctor_review ? <section className="doctor-review-status-card" aria-live="polite"><strong>Doctor review: {result.doctor_review.status === 'COMPLETED' ? 'Completed' : 'Pending'}</strong>{result.doctor_review.status === 'COMPLETED' ? <><p>{reviewDecisionLabel(result.doctor_review.decision)}{result.doctor_review.doctor_name ? ` · ${result.doctor_review.doctor_name}` : ''}</p>{result.doctor_review.notes ? <p>{result.doctor_review.notes}</p> : null}</> : <p>Your result is awaiting review by a doctor.</p>}</section> : null}
-      {reviewError ? <p className="form-error" role="alert">{reviewError}</p> : null}
+      {result.prediction && !result.doctor_review ? <Link className="button button-quiet inline-button" to={`/patient/scans/${result.scan_id}/choose-doctor`}>Verify with Doctor</Link> : null}
+      {result.doctor_review ? <section className="doctor-review-status-card" aria-live="polite">
+        {result.doctor_review.status === 'PENDING' && !result.doctor_review.assigned_doctor_name ? <><strong>Doctor review: Pending, no doctor selected yet</strong><p>This is a legacy review request. Choose a doctor to continue.</p><Link className="button button-primary inline-button" to={`/patient/scans/${result.scan_id}/choose-doctor`}>Choose a doctor</Link></> : null}
+        {result.doctor_review.status === 'PENDING' && result.doctor_review.assigned_doctor_name ? <><strong>Doctor review: Pending, assigned to Dr {result.doctor_review.assigned_doctor_name}{result.doctor_review.assigned_doctor_specialization ? ` (${result.doctor_review.assigned_doctor_specialization})` : ''}</strong><p>Your result is awaiting review by this doctor.</p></> : null}
+        {result.doctor_review.status === 'COMPLETED' ? <><strong>Doctor review: Completed</strong><p>{reviewDecisionLabel(result.doctor_review.decision)}{result.doctor_review.doctor_name ? ` · ${result.doctor_review.doctor_name}` : ''}</p>{result.doctor_review.notes ? <p>{result.doctor_review.notes}</p> : null}</> : null}
+      </section> : null}
       <br />
       <Link className="button button-quiet inline-button" to="/patient">Return to dashboard</Link>
     </AppShell>

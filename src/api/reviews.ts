@@ -52,13 +52,13 @@ export interface DoctorReviewDetail {
   }>
 }
 
-export async function requestScanReview(scanId: string) {
+export async function requestScanReview(scanId: string, doctorId: string) {
   const { data } = await apiClient.post<{
     id: string
     scan_id: string
     status: ReviewStatus
     requested_at: string
-  }>(`/scans/${scanId}/request-review`)
+  }>(`/scans/${scanId}/request-review`, { doctor_id: doctorId })
   return data
 }
 

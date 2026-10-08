@@ -1,4 +1,5 @@
 from enum import Enum
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -12,3 +13,7 @@ class ReviewDecision(str, Enum):
 class ReviewSubmission(BaseModel):
     decision: ReviewDecision
     notes: str | None = Field(default=None, max_length=5000)
+
+
+class ReviewRequest(BaseModel):
+    doctor_id: UUID

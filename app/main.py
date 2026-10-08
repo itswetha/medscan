@@ -12,6 +12,7 @@ from app.routers.doctor_reviews import doctor_router, patient_router as review_r
 from app.routers.notifications import router as notifications_router
 from app.routers.admin_monitoring import router as admin_monitoring_router
 from app.routers.admin_audit import router as admin_audit_router
+from app.routers.doctors import router as doctors_router
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title=settings.app_name)
@@ -19,7 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_origin],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -48,6 +49,7 @@ app.include_router(doctor_router)
 app.include_router(notifications_router)
 app.include_router(admin_monitoring_router)
 app.include_router(admin_audit_router)
+app.include_router(doctors_router)
 
 
 @app.get("/health", tags=["health"])

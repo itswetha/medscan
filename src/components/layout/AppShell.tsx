@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getNotifications, getUnreadNotificationCount, markNotificationRead, type UserNotification } from '../../api/notifications'
 import { useAuth } from '../../context/AuthContext'
 
@@ -73,7 +73,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, is_read: true } : item))
       if (!notification.is_read) setUnreadCount((count) => Math.max(0, count - 1))
       setIsPanelOpen(false)
-      if (notification.scan_id) navigate(`/patient/scans/${notification.scan_id}/result`)
+      if (user?.role === 'doctor') navigate('/doctor')
+      else if (user?.role === 'patient' && notification.scan_id) navigate(`/patient/scans/${notification.scan_id}/result`)
     } catch {
       setNotificationError('Could not mark this notification as read. Please try again.')
     }
@@ -125,6 +126,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13A8.5 8.5 0 0 1 11 3.1 8.5 8.5 0 1 0 20.9 13Z" /></svg>
             )}
           </button>
+          {user?.role === 'doctor' ? <Link className="button button-quiet edit-profile-button" to="/doctor/profile">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.5 3.1-5.3 7-5.3s6.3 1.8 7 5.3" /></svg>
+            <span>Edit profile</span>
+          </Link> : null}
           <span className="account-name">{user ? displayName(user.full_name) : ''}</span>
           <button className="button button-quiet" onClick={handleLogout}>Log out</button>
         </div>
