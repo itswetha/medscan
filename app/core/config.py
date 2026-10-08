@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import Field, ValidationError, field_validator
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     upload_dir: str = "uploads"
     frontend_origin: str = "http://localhost:5173"
+    model_path: Path = Path(__file__).resolve().parent.parent / "ml" / "model" / "mobilenetv2-v1.0.keras"
 
     @field_validator("frontend_origin")
     @classmethod

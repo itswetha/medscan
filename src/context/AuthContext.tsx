@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { isAxiosError } from 'axios'
 import { getCurrentUser, login as loginRequest, type User } from '../api/auth'
 import { TOKEN_KEY, USER_KEY } from '../api/client'
 
@@ -55,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(USER_KEY, JSON.stringify(currentUser))
         setUser(currentUser)
       })
-      .catch(() => {
-        if (active) logout()
+      .catch((cause: unknown) => {
+        if (active && isAxiosError(cause) && cause.response?.status === 401) logout()
       })
       .finally(() => {
         if (active) setIsLoading(false)

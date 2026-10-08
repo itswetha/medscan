@@ -16,7 +16,7 @@ from PIL import Image
 
 from app.core.config import settings
 
-MODEL_PATH = Path(__file__).resolve().parent / "model" / "mobilenetv2-v1.0.keras"
+MODEL_PATH = Path(settings.model_path).expanduser().resolve()
 MODEL_VERSION = "mobilenetv2-v1.0"
 CLASS_NAMES = ["NORMAL", "PNEUMONIA", "TUBERCULOSIS", "UNKNOWN"]
 LAST_CONV_LAYER_NAME = "block_16_project_BN"

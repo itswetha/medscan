@@ -17,17 +17,23 @@ export default function DoctorDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [profileIncomplete, setProfileIncomplete] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileLoadError, setProfileLoadError] = useState(false)
+  const [profileRetryCount, setProfileRetryCount] = useState(0)
 
   useEffect(() => {
     let active = true
+    setProfileLoading(true)
+    setProfileLoadError(false)
     getMyDoctorProfile()
       .then((profile) => {
         if (!active) return
         setProfileIncomplete(!profile.specialization?.trim())
       })
-      .catch(() => { if (active) setProfileIncomplete(true) })
+      .catch(() => { if (active) setProfileLoadError(true) })
+      .finally(() => { if (active) setProfileLoading(false) })
     return () => { active = false }
-  }, [user?.id])
+  }, [user?.id, profileRetryCount])
 
   useEffect(() => {
     let active = true
@@ -51,7 +57,11 @@ export default function DoctorDashboard() {
         <h1>Welcome, {user ? displayName(user.full_name) : 'there'}</h1>
         <p>Review AI-assisted screening results submitted by patients.</p>
       </section>
-      {profileIncomplete ? <aside className="doctor-profile-banner" role="status">
+      {profileLoadError ? <aside className="doctor-profile-banner" role="alert">
+        <span>Could not load your profile status.</span>
+        <button type="button" className="button button-quiet" onClick={() => setProfileRetryCount((count) => count + 1)}>Retry</button>
+      </aside> : null}
+      {!profileLoading && !profileLoadError && profileIncomplete ? <aside className="doctor-profile-banner" role="status">
         <span>Complete your profile so patients can find and select you.</span>
         <Link to="/doctor/profile">Complete profile</Link>
       </aside> : null}
