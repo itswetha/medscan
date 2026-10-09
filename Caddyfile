@@ -1,0 +1,11 @@
+# Caddy gets and renews the HTTPS certificate automatically.
+# DOMAIN comes from .env.docker (for example vitalscan.example.com).
+{$DOMAIN} {
+    encode gzip
+
+    request_body {
+        max_size 12MB
+    }
+
+    reverse_proxy frontend:80
+}
