@@ -10,6 +10,17 @@ from typing import Any
 from uuid import UUID
 from zipfile import ZipFile
 
+# Set native thread limits before importing numerical libraries.
+for _thread_env_var in (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "TF_NUM_INTRAOP_THREADS",
+    "TF_NUM_INTEROP_THREADS",
+):
+    os.environ[_thread_env_var] = "1"
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -26,6 +37,9 @@ _grad_model = None
 _tensorflow = None
 _preprocess_input = None
 _model_load_lock = Lock()
+_inference_lock = Lock()
+
+cv2.setNumThreads(1)
 
 
 def _compatible_model_path() -> Path:
@@ -91,6 +105,8 @@ def _load_model_once():
             if _model is None:
                 import tensorflow as tf
 
+                tf.config.threading.set_intra_op_parallelism_threads(1)
+                tf.config.threading.set_inter_op_parallelism_threads(1)
                 _preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
                 loaded_model = tf.keras.models.load_model(str(_compatible_model_path()), compile=False)
                 grad_model = tf.keras.models.Model(
@@ -104,27 +120,13 @@ def _load_model_once():
 
 
 def preprocess_image(image_path: str):
-    img = Image.open(image_path).convert("RGB").resize((224, 224))
-    orig_img = np.array(img)
+    with Image.open(image_path) as source:
+        img = source.convert("RGB").resize((224, 224))
+    orig_img = np.asarray(img)
     arr = orig_img.astype("float32")
     arr = _preprocess_input(arr)
     arr = np.expand_dims(arr, axis=0)
     return arr, orig_img
-
-
-def predict(image_path: str, model):
-    img_array, orig_img = preprocess_image(image_path)
-    pred_probs = model.predict(img_array, verbose=0)[0]
-    pred_class_idx = int(np.argmax(pred_probs))
-    return {
-        "predicted_class": CLASS_NAMES[pred_class_idx],
-        "confidence": float(pred_probs[pred_class_idx]),
-        "all_probs": {CLASS_NAMES[i]: float(pred_probs[i]) for i in range(len(CLASS_NAMES))},
-        "pred_class_idx": pred_class_idx,
-        "pred_probs": pred_probs,
-        "orig_img": orig_img,
-        "img_array": img_array,
-    }
 
 
 def get_gradcam(img_array, grad_model, tf, class_idx=None):
@@ -139,7 +141,9 @@ def get_gradcam(img_array, grad_model, tf, class_idx=None):
     conv_output = conv_output[0]
     heatmap = tf.reduce_sum(tf.multiply(pooled_grads, conv_output), axis=-1)
     heatmap = tf.maximum(heatmap, 0) / (tf.math.reduce_max(heatmap) + 1e-8)
-    return heatmap.numpy(), class_idx
+    heatmap_array = heatmap.numpy()
+    del conv_output, grads, heatmap, loss, pooled_grads, predictions, tape
+    return heatmap_array, class_idx
 
 
 def _save_gradcam_overlay(heatmap: np.ndarray, orig_img: np.ndarray, scan_id: UUID | str) -> str:
@@ -159,23 +163,27 @@ def _save_gradcam_overlay(heatmap: np.ndarray, orig_img: np.ndarray, scan_id: UU
 
 def run_analysis(scan_id: UUID | str, image_path: str) -> dict:
     """Run four-class prediction and Grad-CAM using one shared model object."""
-    model, grad_model, tf = _load_model_once()
-    prediction = predict(image_path, model)
-    heatmap, _ = get_gradcam(
-        prediction["img_array"],
-        grad_model,
-        tf,
-        class_idx=prediction["pred_class_idx"],
-    )
-    gradcam_path = _save_gradcam_overlay(heatmap, prediction["orig_img"], scan_id)
-    probabilities = prediction["all_probs"]
+    with _inference_lock:
+        model, grad_model, tf = _load_model_once()
+        img_array, orig_img = preprocess_image(image_path)
+        pred_probs = model(img_array, training=False).numpy()[0]
+        pred_class_idx = int(np.argmax(pred_probs))
+        confidence = float(pred_probs[pred_class_idx])
+        probabilities = {
+            CLASS_NAMES[index]: float(pred_probs[index])
+            for index in range(len(CLASS_NAMES))
+        }
+        heatmap, _ = get_gradcam(img_array, grad_model, tf, class_idx=pred_class_idx)
+        gradcam_path = _save_gradcam_overlay(heatmap, orig_img, scan_id)
 
-    return {
-        "normal_probability": probabilities["NORMAL"],
-        "pneumonia_probability": probabilities["PNEUMONIA"],
-        "tuberculosis_probability": probabilities["TUBERCULOSIS"],
-        "other_probability": probabilities["UNKNOWN"],
-        "ai_confidence": prediction["confidence"],
-        "gradcam_path": gradcam_path,
-        "model_version": MODEL_VERSION,
-    }
+        del heatmap, img_array, orig_img, pred_probs
+
+        return {
+            "normal_probability": probabilities["NORMAL"],
+            "pneumonia_probability": probabilities["PNEUMONIA"],
+            "tuberculosis_probability": probabilities["TUBERCULOSIS"],
+            "other_probability": probabilities["UNKNOWN"],
+            "ai_confidence": confidence,
+            "gradcam_path": gradcam_path,
+            "model_version": MODEL_VERSION,
+        }
